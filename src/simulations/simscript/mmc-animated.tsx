@@ -144,36 +144,53 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
 
     initializeAnimation(animHost: HTMLElement): void {
         const sim = this.props.sim as MMCAnimated;
-        console.log('initializeAnimation called, animHost:', animHost);
+        let lastServerCount = 0;
         
-        let debugCount = 0;
+        // Function to create/update server circles
+        const ensureServerCircles = (serverCount: number) => {
+            if (serverCount === lastServerCount) return;
+            lastServerCount = serverCount;
+            
+            // Find the servers rectangle container
+            const serversRect = animHost.querySelector('rect[x="450"]');
+            if (!serversRect) return;
+            
+            // Remove old server circles
+            const oldCircles = animHost.querySelectorAll('circle[id^="server-"]');
+            oldCircles.forEach(c => c.remove());
+            
+            // Create new server circles
+            const svg = animHost.querySelector('svg');
+            if (!svg) return;
+            
+            for (let i = 0; i < serverCount; i++) {
+                const x = 550 + (i % 4) * 90;
+                const y = 120 + Math.floor(i / 4) * 100;
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('id', `server-${i}`);
+                circle.setAttribute('cx', String(x));
+                circle.setAttribute('cy', String(y));
+                circle.setAttribute('r', '30');
+                circle.setAttribute('fill', '#2ecc71');
+                circle.setAttribute('stroke', '#27ae60');
+                circle.setAttribute('stroke-width', '2');
+                svg.appendChild(circle);
+            }
+        };
         
         // Update server states frequently
         const updateServers = () => {
             // Get current server capacity and number in service
             const serverCount = sim.qService.capacity as number;
             
+            // Ensure we have the right number of server circles
+            ensureServerCircles(serverCount);
+            
             // Use the 'pop' property which returns the current number of entities in the queue
             const inService = (sim.qService as any).pop || 0;
             
-            // Debug every second
-            debugCount++;
-            if (debugCount % 20 === 0) {
-                console.log('DEBUG:', { 
-                    inService, 
-                    pop: (sim.qService as any).pop,
-                    entities: (sim.qService as any).entities?.length,
-                    items: (sim.qService as any)._items?.size
-                });
-            }
-            
             // Find all server circles in the SVG
             const allCircles = animHost.querySelectorAll('circle[id^="server-"]');
-            
-            // Debug: log circles found
-            if (debugCount % 20 === 0) {
-                console.log('Circles found:', allCircles.length, 'inService:', inService);
-            }
             
             // Update each server circle color
             allCircles.forEach((circle: any, index: number) => {
