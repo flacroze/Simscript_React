@@ -146,23 +146,20 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
         const sim = this.props.sim as MMCAnimated;
         let lastServerCount = 0;
         
-        // Function to create/update server circles
+        // Function to create/update server circles dynamically
         const ensureServerCircles = (serverCount: number) => {
             if (serverCount === lastServerCount) return;
             lastServerCount = serverCount;
             
-            // Find the servers rectangle container
-            const serversRect = animHost.querySelector('rect[x="450"]');
-            if (!serversRect) return;
+            // Find the SVG element (animHost IS the svg element with class ss-anim)
+            const svg = animHost.tagName === 'svg' ? animHost : animHost.querySelector('svg');
+            if (!svg) return;
             
             // Remove old server circles
-            const oldCircles = animHost.querySelectorAll('circle[id^="server-"]');
+            const oldCircles = svg.querySelectorAll('circle[id^="server-"]');
             oldCircles.forEach(c => c.remove());
             
             // Create new server circles
-            const svg = animHost.querySelector('svg');
-            if (!svg) return;
-            
             for (let i = 0; i < serverCount; i++) {
                 const x = 550 + (i % 4) * 90;
                 const y = 120 + Math.floor(i / 4) * 100;
@@ -189,10 +186,11 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
             // Use the 'pop' property which returns the current number of entities in the queue
             const inService = (sim.qService as any).pop || 0;
             
-            // Find all server circles in the SVG
-            const allCircles = animHost.querySelectorAll('circle[id^="server-"]');
+            // Find all server circles in the SVG (animHost might be the svg itself)
+            const svg = animHost.tagName === 'svg' ? animHost : animHost.querySelector('svg');
+            const allCircles = svg ? svg.querySelectorAll('circle[id^="server-"]') : [];
             
-            // Update each server circle color
+            // Update each server circle color using setAttribute (not style)
             allCircles.forEach((circle: any, index: number) => {
                 if (index < serverCount) {
                     // Server is busy if its index is less than number in service
