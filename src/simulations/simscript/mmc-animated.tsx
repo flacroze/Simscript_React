@@ -167,22 +167,8 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
     }
 
     getAnimationOptions(): any {
-        const sim = this.props.sim as MMCAnimated;
-        
         return {
-            getEntityHtml: (e: Entity) => {
-                return `<circle cx='0' cy='0' r='12' fill='#3498db' stroke='#2980b9' stroke-width='1.5'/>`;
-            },
-            queues: [
-                { 
-                    queue: sim.qWait, 
-                    element: 'svg rect[x="20"][y="85"]',
-                    x: 370,
-                    y: 365,
-                    max: 6,
-                    angle: 0
-                }
-            ]
+            queues: []
         };
     }
 
@@ -223,26 +209,22 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
     initializeAnimation(animHost: HTMLElement): void {
         const sim = this.props.sim as MMCAnimated;
         let lastServerCount = 0;
+        let lastWaitingCount = -1;
         
         // Function to find the current SVG in the DOM (it may be replaced by React re-renders)
         const findCurrentSvg = (): SVGElement | null => {
-            // Search from document since animHost reference may become stale after re-render
             return document.querySelector('svg.ss-anim') as SVGElement | null;
         };
         
         // Function to create/update server circles dynamically
         const ensureServerCircles = (serverCount: number, svg: SVGElement) => {
-            // Count existing server circles
             const existingCircles = svg.querySelectorAll('circle[id^="server-"]');
             
-            // Only recreate if count changed
             if (existingCircles.length === serverCount && lastServerCount === serverCount) return;
             lastServerCount = serverCount;
             
-            // Remove old server circles
             existingCircles.forEach(c => c.remove());
             
-            // Create new server circles
             for (let i = 0; i < serverCount; i++) {
                 const x = 550 + (i % 4) * 90;
                 const y = 120 + Math.floor(i / 4) * 100;
@@ -258,45 +240,76 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
             }
         };
         
-        // Update server states frequently
-        const updateServers = () => {
-            // Find the current SVG element in the DOM (may have been replaced by React)
+        // Function to update waiting queue display (10 per row, new rows above)
+        const updateWaitingQueue = (svg: SVGElement) => {
+            const waitingCount = (sim.qWait as any).pop || 0;
+            
+            if (waitingCount === lastWaitingCount) return;
+            lastWaitingCount = waitingCount;
+            
+            // Remove old waiting circles
+            const oldCircles = svg.querySelectorAll('circle[id^="waiting-"]');
+            oldCircles.forEach(c => c.remove());
+            
+            // Create waiting customer circles: 10 per row, rows go upward
+            const circlesPerRow = 10;
+            const circleRadius = 12;
+            const spacing = 35;
+            const startX = 55;
+            const bottomY = 360;
+            
+            for (let i = 0; i < waitingCount; i++) {
+                const col = i % circlesPerRow;
+                const row = Math.floor(i / circlesPerRow);
+                const x = startX + col * spacing;
+                const y = bottomY - row * spacing;
+                
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('id', `waiting-${i}`);
+                circle.setAttribute('cx', String(x));
+                circle.setAttribute('cy', String(y));
+                circle.setAttribute('r', String(circleRadius));
+                circle.setAttribute('fill', '#3498db');
+                circle.setAttribute('stroke', '#2980b9');
+                circle.setAttribute('stroke-width', '1.5');
+                svg.appendChild(circle);
+            }
+        };
+        
+        // Update all animations
+        const updateAll = () => {
             const svg = findCurrentSvg();
             if (!svg) return;
             
-            // Get current server capacity and number in service
+            // Update servers
             const serverCount = sim.qService.capacity as number;
-            
-            // Ensure we have the right number of server circles
             ensureServerCircles(serverCount, svg);
             
-            // Use the 'pop' property which returns the current number of entities in the queue
             const inService = (sim.qService as any).pop || 0;
+            const serverCircles = svg.querySelectorAll('circle[id^="server-"]');
             
-            // Find all server circles in the current SVG
-            const allCircles = svg.querySelectorAll('circle[id^="server-"]');
-            
-            // Update each server circle color using setAttribute (not style)
-            allCircles.forEach((circle: any, index: number) => {
+            serverCircles.forEach((circle: any, index: number) => {
                 if (index < serverCount) {
-                    // Server is busy if its index is less than number in service
                     if (index < inService) {
-                        circle.setAttribute('fill', '#e74c3c'); // red = busy
+                        circle.setAttribute('fill', '#e74c3c');
                         circle.setAttribute('stroke', '#c0392b');
                     } else {
-                        circle.setAttribute('fill', '#2ecc71'); // green = available
+                        circle.setAttribute('fill', '#2ecc71');
                         circle.setAttribute('stroke', '#27ae60');
                     }
                 }
             });
+            
+            // Update waiting queue
+            updateWaitingQueue(svg);
         };
         
         // Update on time changes
-        sim.timeNowChanged.addEventListener(updateServers);
-        sim.stateChanged.addEventListener(updateServers);
+        sim.timeNowChanged.addEventListener(updateAll);
+        sim.stateChanged.addEventListener(updateAll);
         
         // Also update frequently via interval for better responsiveness
-        const interval = setInterval(updateServers, 50);
+        const interval = setInterval(updateAll, 50);
         
         // Clean up interval when component unmounts
         const originalStop = sim.stop.bind(sim);
@@ -306,7 +319,7 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
         };
         
         // Initial update
-        updateServers();
+        updateAll();
     }
 }
 
