@@ -2,6 +2,12 @@
     "name": "simscript-react",
     "version": "0.1.0",
     "private": true,
+    "resolutions": {
+        "immer": "^9.0.21",
+        "loader-utils": "^2.0.4",
+        "shell-quote": "^1.8.1",
+        "ejs": "^3.1.10"
+    },
     "dependencies": {
         "@testing-library/jest-dom": "^5.14.1",
         "@testing-library/react": "^11.2.7",
@@ -19,6 +25,7 @@
         "web-vitals": "^1.1.2"
     },
     "scripts": {
+        "preinstall": "npx npm-force-resolutions",
         "start": "react-scripts start",
         "build": "react-scripts build",
         "test": "react-scripts test",
@@ -43,6 +50,7 @@
         ]
     },
     "devDependencies": {
-        "@types/react-router-dom": "^5.1.8"
+        "@types/react-router-dom": "^5.1.8",
+        "npm-force-resolutions": "^0.0.10"
     }
 }
