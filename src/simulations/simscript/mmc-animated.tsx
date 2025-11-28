@@ -146,17 +146,17 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
         const sim = this.props.sim as MMCAnimated;
         const serverCount = sim.qService.capacity as number;
         
-        // Update server states on time changes
+        // Update server states frequently
         const updateServers = () => {
-            // Get current number of customers in service
+            // Get current number of customers in service by counting occupied servers
             const inService = sim.serversOccupied;
             
             // Update each server circle color
             for (let i = 0; i < serverCount; i++) {
                 const serverCircle = animHost.querySelector(`#server-${i}`) as SVGCircleElement;
                 if (serverCircle) {
-                    // If fewer customers than this server index, the server is idle
-                    if (inService > i) {
+                    // Server is busy if it's handling a customer
+                    if (i < inService) {
                         serverCircle.setAttribute('fill', '#e74c3c'); // red = busy
                         serverCircle.setAttribute('stroke', '#c0392b');
                     } else {
@@ -167,8 +167,19 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
             }
         };
         
+        // Update on time changes
         sim.timeNowChanged.addEventListener(updateServers);
         sim.stateChanged.addEventListener(updateServers);
+        
+        // Also update frequently via interval for better responsiveness
+        const interval = setInterval(updateServers, 50);
+        
+        // Clean up interval when component unmounts
+        const originalStop = sim.stop.bind(sim);
+        sim.stop = function(immediately?: boolean) {
+            clearInterval(interval);
+            return originalStop(immediately);
+        };
         
         // Initial update
         updateServers();
@@ -223,9 +234,10 @@ class Customer extends Entity<MMCAnimated> {
         await this.enterQueue(sim.qService);
         this.leaveQueue(sim.qWait);
         
-        // Track server occupancy
+        // Mark as in service
         sim.serversOccupied++;
-        await this.delay(sim.service.sample());
+        const serviceTime = sim.service.sample();
+        await this.delay(serviceTime);
         sim.serversOccupied--;
         
         this.leaveQueue(sim.qService);
