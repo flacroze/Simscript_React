@@ -1,5 +1,5 @@
 import { Simulation, Entity, Queue, Exponential, setOptions, format } from 'simscript';
-import { SimulationComponent, NumericParameter } from '../../simscript-react/components';
+import { SimulationComponent, NumericParameter, BooleanParameter } from '../../simscript-react/components';
 
 /**
  * MMC Animation Component - Custom visualization of waiting queue and servers
@@ -31,6 +31,11 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
                         min={10} max={200}
                         change={v => sim.service = new Exponential(v)}
                         suffix={` ${format(sim.service.mean, 0)} ${sim.timeUnit}`} />
+                </li>
+                <li>
+                    <BooleanParameter label='Slow Mode:' parent={this}
+                        value={sim.slowMode}
+                        change={v => sim.slowMode = v} />
                 </li>
             </ul>
         </>;
@@ -179,6 +184,7 @@ export class MMCAnimated extends Simulation {
     interArrival = new Exponential(80);
     service = new Exponential(100);
     serversOccupied = 0;  // Track number of busy servers
+    _slowMode = false;
 
     constructor(options?: any) {
         super();
@@ -192,6 +198,21 @@ export class MMCAnimated extends Simulation {
         this.qWait.grossPop.setHistogramParameters(1, 0, 10);
         this.qWait.grossDwell.setHistogramParameters(60, 0, 500 - 0.1);
         this.generateEntities(Customer, this.interArrival, 1e5);
+    }
+
+    // toggle simulation speed
+    get slowMode(): boolean {
+        return this._slowMode;
+    }
+    set slowMode(value: boolean) {
+        this._slowMode = value;
+        if (value) {
+            this.maxTimeStep = 1;
+            this.frameDelay = 30;
+        } else {
+            this.maxTimeStep = 0;
+            this.frameDelay = 0;
+        }
     }
 }
 
