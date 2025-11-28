@@ -85,11 +85,11 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
         const sim = this.props.sim as MMCAnimated;
         const serverCount = sim.qService.capacity as number;
         
-        // Create server circles
+        // Create server circles inside the Servers rectangle (right side)
         let serverCircles = '';
         for (let i = 0; i < serverCount; i++) {
-            const x = 100 + (i % 5) * 120;
-            const y = 150 + Math.floor(i / 5) * 120;
+            const x = 550 + (i % 4) * 90;
+            const y = 120 + Math.floor(i / 4) * 100;
             serverCircles += `<circle id='server-${i}' cx='${x}' cy='${y}' r='30' fill='#2ecc71' stroke='#27ae60' stroke-width='2'/>`;
         }
 
@@ -102,7 +102,7 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
             
             <!-- Servers Section -->
             <text x='450' y='70' font-size='14' font-weight='bold' fill='#333'>Servers</text>
-            <rect x='450' y='85' width='530' height='300' fill='white' stroke='#bbb' stroke-width='2' rx='5'/>
+            <rect x='450' y='85' width='520' height='300' fill='white' stroke='#bbb' stroke-width='2' rx='5'/>
             ${serverCircles}
             
             <!-- Legend -->
@@ -128,10 +128,10 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
                 { 
                     queue: sim.qWait, 
                     element: 'svg rect[x="20"][y="85"]',
-                    x: 390,
-                    y: 370,
-                    max: 30,
-                    angle: -45
+                    x: 370,
+                    y: 365,
+                    max: 6,
+                    angle: 0
                 }
             ]
         };
