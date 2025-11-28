@@ -1,8 +1,8 @@
 import { Simulation, Entity, Queue, Exponential, setOptions, format } from 'simscript';
-import { SimulationComponent, NumericParameter } from '../../simscript-react/components';
+import { SimulationComponent, NumericParameter, HTMLDiv } from '../../simscript-react/components';
 
 /**
- * MMC Animation Component - shows servers, queue, and animated customers
+ * MMC Animation Component - shows queue and servers with animated customers
  */
 export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
 
@@ -87,16 +87,6 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
                     Number of Servers:{' '}
                     <b>{format(c, 0)}</b></li>
                 <li>
-                    Customers Waiting:{' '}
-                    <b>{format(sim.qWait.grossPop.avg, 2)}</b></li>
-                <li>
-                    Customers Being Served:{' '}
-                    <b>{format(sim.qService.grossPop.avg, 2)}</b></li>
-                <li>
-                    Server Utilization:{' '}
-                    <b>{format(sim.qService.grossPop.avg / c * 100, 0)}%</b>{' '}
-                    (<i>{format(rho * 100, 0)}%</i>)</li>
-                <li>
                     Mean Wait:{' '}
                     <b>{format(sim.qWait.grossDwell.avg, 2)}</b>{' '}
                     (<i>{format(wq, 2)})</i> {sim.timeUnit}</li>
@@ -104,6 +94,10 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
                     Mean Queue:{' '}
                     <b>{format(sim.qWait.grossPop.avg, 2)}</b>{' '}
                     (<i>{format(lq, 2)}</i>)</li>
+                <li>
+                    Server Utilization:{' '}
+                    <b>{format(sim.qService.grossPop.avg / c * 100, 0)}%</b>{' '}
+                    (<i>{format(rho * 100, 0)}%</i>)</li>
                 <li>
                     Customers Served:{' '}
                     <b>{format(sim.qService.grossDwell.cnt, 0)}</b></li>
@@ -113,78 +107,49 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
 
     // render animation
     getAnimationHostHtml(): string {
-        const sim = this.props.sim as MMCAnimated;
-        const c = sim.qService.capacity as number;
-        let serverElements = '';
-        
-        // Create server representations
-        for (let i = 0; i < c; i++) {
-            const x = 20 + (i * 60);
-            serverElements += `<circle class='ss-queue server-${i}' cx='${x}%' cy='30%' r='15'/>`;
-        }
-
-        return `<svg class='ss-anim' viewBox='0 0 1000 600'>
+        return `<svg class='ss-anim' viewBox='0 0 1000 400'>
             <!-- Title -->
-            <text x='5%' y='8%' font-size='16' font-weight='bold'>Servers</text>
-            ${serverElements}
+            <text x='5%' y='8%' font-size='18' font-weight='bold' fill='#333'>M/M/C Queue Animation</text>
             
-            <!-- Arrival -->
-            <text x='5%' y='55%' font-size='14' font-weight='bold'>Arrivals</text>
-            <circle class='ss-queue customer-arr' cx='10%' cy='65%' r='15'/>
+            <!-- Waiting Queue Section -->
+            <text x='5%' y='25%' font-size='14' font-weight='bold' fill='#333'>Waiting Queue</text>
+            <rect x='5%' y='30%' width='40%' height='45%' fill='#f5f5f5' stroke='#999' stroke-width='2' rx='5'/>
+            <circle class='ss-queue qwait' cx='25%' cy='60%' r='18'/>
             
-            <!-- Queue -->
-            <text x='40%' y='55%' font-size='14' font-weight='bold'>Waiting Queue</text>
-            <rect x='35%' y='60%' width='30%' height='25%' fill='none' stroke='#ccc' stroke-width='2' rx='5'/>
-            <circle class='ss-queue customer-queue' cx='50%' cy='72.5%' r='15'/>
-            
-            <!-- Service -->
-            <text x='75%' y='55%' font-size='14' font-weight='bold'>Served</text>
-            <circle class='ss-queue customer-service' cx='85%' cy='65%' r='15'/>
+            <!-- Servers Section -->
+            <text x='55%' y='25%' font-size='14' font-weight='bold' fill='#333'>Servers</text>
+            <rect x='55%' y='30%' width='40%' height='45%' fill='#f5f5f5' stroke='#999' stroke-width='2' rx='5'/>
+            <circle class='ss-queue qservice' cx='75%' cy='60%' r='18'/>
             
             <!-- Legend -->
-            <text x='5%' y='95%' font-size='12' fill='#666'>
-                Blue = Customer | Green = Waiting | Yellow = Being Served
+            <text x='5%' y='92%' font-size='11' fill='#666'>
+                ● = Customer Waiting  |  ● = Customer Being Served
             </text>
         </svg>`;
     }
 
     getAnimationOptions(): any {
         const sim = this.props.sim as MMCAnimated;
-        const c = sim.qService.capacity as number;
         
-        // Build queue configs for servers
-        const queueConfigs: any[] = [
-            { queue: sim.qArrival, element: 'svg .ss-queue.customer-arr' },
-            { queue: sim.qWait, element: 'svg .ss-queue.customer-queue', max: 8 },
-            { queue: sim.qService, element: 'svg .ss-queue.customer-service', max: c },
-        ];
-
         return {
             getEntityHtml: (e: Entity) => {
+                // Color based on which queue the entity is in
+                let color = '#e74c3c';  // default red
                 if (e instanceof Customer) {
-                    const status = (e as any).status || 'waiting';
-                    const colors: { [key: string]: string } = {
-                        'arriving': '#3498db',
-                        'waiting': '#2ecc71',
-                        'serving': '#f39c12',
-                        'leaving': '#95a5a6'
-                    };
-                    const color = colors[status] || '#3498db';
-                    return `<circle cx='0' cy='0' r='8' fill='${color}' stroke='#2c3e50' stroke-width='1'/>`;
+                    const customer = e as any;
+                    if (customer.inService) {
+                        color = '#f39c12';  // yellow for service
+                    } else {
+                        color = '#3498db';  // blue for waiting
+                    }
                 }
-                return `<circle cx='0' cy='0' r='8' fill='#3498db'/>`;
+                return `<circle cx='0' cy='0' r='6' fill='${color}' stroke='white' stroke-width='1'/>`;
             },
-            queues: queueConfigs
+            queues: [
+                { queue: sim.qWait, element: 'svg .ss-queue.qwait', max: 12, angle: 45 },
+                { queue: sim.qService, element: 'svg .ss-queue.qservice', max: 8, angle: 45 },
+            ]
         };
-    }
-
-    initializeAnimation(animHost: HTMLElement): void {
-        const sim = this.props.sim as MMCAnimated;
-        
-        // Update animation on time changes
-        sim.timeNowChanged.addEventListener(() => {
-            this.forceUpdate();
-        });
     }
 }
 
@@ -192,9 +157,8 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
  * MMC Simulation with Animation Support
  */
 export class MMCAnimated extends Simulation {
-    qArrival = new Queue('Arrival');    // For animation
-    qWait = new Queue('Wait');          // Customers waiting
-    qService = new Queue('Service', 2); // Being served
+    qWait = new Queue('Wait');
+    qService = new Queue('Service', 2);
     interArrival = new Exponential(80);
     service = new Exponential(100);
 
@@ -212,38 +176,34 @@ export class MMCAnimated extends Simulation {
         this.qWait.grossPop.setHistogramParameters(1, 0, 10);
         this.qWait.grossDwell.setHistogramParameters(60, 0, 500 - 0.1);
 
-        // Start simulation
+        // Start simulation - generate many customers
         this.generateEntities(Customer, this.interArrival, 1e5);
     }
 }
 
 // Customer entity
 class Customer extends Entity<MMCAnimated> {
-    status = 'arriving';
+    inService = false;
 
     async script() {
         let sim = this.simulation;
         
-        // Arrival phase
-        this.status = 'arriving';
-        this.enterQueueImmediately(sim.qArrival);
-        await this.delay(0.1);
-        this.leaveQueue(sim.qArrival);
-        
-        // Enter wait queue
-        this.status = 'waiting';
+        // Enter waiting queue immediately
         this.enterQueueImmediately(sim.qWait);
         
-        // Wait for service
+        // Wait for service to become available
         await this.enterQueue(sim.qService);
+        
+        // Leave the waiting queue
         this.leaveQueue(sim.qWait);
         
-        // Service phase
-        this.status = 'serving';
+        // Now in service
+        this.inService = true;
+        
+        // Delay for service duration
         await this.delay(sim.service.sample());
         
-        // Leaving
-        this.status = 'leaving';
+        // Service complete
         this.leaveQueue(sim.qService);
     }
 }
