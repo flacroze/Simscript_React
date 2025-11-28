@@ -1,5 +1,5 @@
 import React from 'react';
-import { Simulation, Entity, Queue, Exponential, setOptions, format, Animation } from 'simscript';
+import { Simulation, Entity, Queue, Exponential, setOptions, format, Animation, SimulationState } from 'simscript';
 import { SimulationComponent, NumericParameter, BooleanParameter, HTMLDiv } from '../../simscript-react/components';
 
 /**
@@ -45,7 +45,7 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
 
         // Helper to restart simulation after parameter change
         const restartSim = () => {
-            const wasRunning = sim.state === 1; // SimulationState.Running = 1
+            const wasRunning = sim.state === SimulationState.Running;
             sim.stop(true);
             // Increment version to force new animation DOM
             this._animVersion++;
@@ -201,7 +201,7 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
                 {animHtml != null && <HTMLDiv html={animHtml} />}
             </div>
             <button className='btn-run' onClick={e => this.clickRun(e)}>
-                {sim.state !== 1 ? runText : stopText}
+                {sim.state !== SimulationState.Running ? runText : stopText}
             </button>
             <div className='sim-output'>
                 {sim.timeNow > 0 && this.renderOutput()}
@@ -211,10 +211,11 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
 
     clickRun(e?: any) {
         const sim = this.props.sim;
-        if (sim.state === 1) { // Running
+        (this as any)._lastUpdate = 0;
+        if (sim.state === SimulationState.Running) {
             sim.stop();
         } else {
-            sim.start(e.ctrlKey);
+            sim.start(e?.ctrlKey);
         }
         this.forceUpdate();
     }
