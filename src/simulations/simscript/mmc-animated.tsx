@@ -146,18 +146,23 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
         const sim = this.props.sim as MMCAnimated;
         let lastServerCount = 0;
         
+        // Function to find the current SVG in the DOM (it may be replaced by React re-renders)
+        const findCurrentSvg = (): SVGElement | null => {
+            // Search from document since animHost reference may become stale after re-render
+            return document.querySelector('svg.ss-anim') as SVGElement | null;
+        };
+        
         // Function to create/update server circles dynamically
-        const ensureServerCircles = (serverCount: number) => {
-            if (serverCount === lastServerCount) return;
+        const ensureServerCircles = (serverCount: number, svg: SVGElement) => {
+            // Count existing server circles
+            const existingCircles = svg.querySelectorAll('circle[id^="server-"]');
+            
+            // Only recreate if count changed
+            if (existingCircles.length === serverCount && lastServerCount === serverCount) return;
             lastServerCount = serverCount;
             
-            // Find the SVG element (animHost IS the svg element with class ss-anim)
-            const svg = animHost.tagName === 'svg' ? animHost : animHost.querySelector('svg');
-            if (!svg) return;
-            
             // Remove old server circles
-            const oldCircles = svg.querySelectorAll('circle[id^="server-"]');
-            oldCircles.forEach(c => c.remove());
+            existingCircles.forEach(c => c.remove());
             
             // Create new server circles
             for (let i = 0; i < serverCount; i++) {
@@ -177,18 +182,21 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
         
         // Update server states frequently
         const updateServers = () => {
+            // Find the current SVG element in the DOM (may have been replaced by React)
+            const svg = findCurrentSvg();
+            if (!svg) return;
+            
             // Get current server capacity and number in service
             const serverCount = sim.qService.capacity as number;
             
             // Ensure we have the right number of server circles
-            ensureServerCircles(serverCount);
+            ensureServerCircles(serverCount, svg);
             
             // Use the 'pop' property which returns the current number of entities in the queue
             const inService = (sim.qService as any).pop || 0;
             
-            // Find all server circles in the SVG (animHost might be the svg itself)
-            const svg = animHost.tagName === 'svg' ? animHost : animHost.querySelector('svg');
-            const allCircles = svg ? svg.querySelectorAll('circle[id^="server-"]') : [];
+            // Find all server circles in the current SVG
+            const allCircles = svg.querySelectorAll('circle[id^="server-"]');
             
             // Update each server circle color using setAttribute (not style)
             allCircles.forEach((circle: any, index: number) => {
