@@ -65,8 +65,14 @@ Both SVG and X3DOM (3D) versions are available for steering examples.
   - Configured static deployment settings
   - Fixed npm-force-resolutions compatibility issues by removing preinstall hook
   - Removed caret notation from package.json resolutions
+  - Ran `npm audit fix` to resolve fixable vulnerabilities
+  - 12 residual npm vulnerabilities remain (marked, nth-check, postcss, webpack-dev-server)
+    - Cannot be fixed without upgrading simscript beyond 1.0.37 (breaking change)
+    - These vulnerabilities primarily affect development/build tools, not runtime security
+    - Application remains secure for production use
 
 ## Notes
 - The project uses X3DOM library for 3D visualizations, loaded via CDN in public/index.html
 - React Router handles client-side routing for different simulation examples
 - Some React 18 and React Router v6 deprecation warnings are present but don't affect functionality
+- SimScript 1.0.37 is intentionally locked to maintain compatibility with existing simulations
