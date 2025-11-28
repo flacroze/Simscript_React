@@ -1,10 +1,24 @@
-import { Simulation, Entity, Queue, Exponential, setOptions, format } from 'simscript';
+import { Simulation, Entity, Queue, Exponential, setOptions, format, Animation } from 'simscript';
 import { SimulationComponent, NumericParameter, BooleanParameter } from '../../simscript-react/components';
 
 /**
  * MMC Animation Component - Custom visualization of waiting queue and servers
  */
 export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
+    _animation: Animation | null = null;
+
+    // Reinitialize animation after DOM is replaced
+    reinitializeAnimation() {
+        const animRef = (this as any)._animRef;
+        if (animRef && animRef.current) {
+            const animHost = animRef.current.querySelector('.ss-anim') as HTMLElement;
+            if (animHost) {
+                // Create new Animation instance
+                this._animation = new Animation(this.props.sim, animHost, this.getAnimationOptions());
+                this.initializeAnimation(animHost);
+            }
+        }
+    }
 
     renderParams(): JSX.Element {
         const
@@ -16,7 +30,11 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
             const wasRunning = sim.state === 1; // SimulationState.Running = 1
             sim.stop(true);
             if (wasRunning) {
-                setTimeout(() => sim.start(), 50);
+                // Wait for React to re-render, then reinitialize animation and start
+                setTimeout(() => {
+                    this.reinitializeAnimation();
+                    sim.start();
+                }, 100);
             }
         };
 
