@@ -144,12 +144,12 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
 
     initializeAnimation(animHost: HTMLElement): void {
         const sim = this.props.sim as MMCAnimated;
-        const serverCount = sim.qService.capacity as number;
         
         // Update server states frequently
         const updateServers = () => {
-            // Get current number of customers in service by counting occupied servers
-            const inService = sim.serversOccupied;
+            // Get current server capacity and number in service
+            const serverCount = sim.qService.capacity as number;
+            const inService = (sim.qService.grossPop as any).current || 0;
             
             // Update each server circle color
             for (let i = 0; i < serverCount; i++) {
@@ -194,7 +194,6 @@ export class MMCAnimated extends Simulation {
     qService = new Queue('Service', 2);
     interArrival = new Exponential(80);
     service = new Exponential(100);
-    serversOccupied = 0;  // Track number of busy servers
     _slowMode = false;
 
     constructor(options?: any) {
@@ -234,11 +233,8 @@ class Customer extends Entity<MMCAnimated> {
         await this.enterQueue(sim.qService);
         this.leaveQueue(sim.qWait);
         
-        // Mark as in service
-        sim.serversOccupied++;
-        const serviceTime = sim.service.sample();
-        await this.delay(serviceTime);
-        sim.serversOccupied--;
+        // Service the customer
+        await this.delay(sim.service.sample());
         
         this.leaveQueue(sim.qService);
     }
