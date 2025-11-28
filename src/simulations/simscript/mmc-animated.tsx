@@ -144,42 +144,36 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
 
     initializeAnimation(animHost: HTMLElement): void {
         const sim = this.props.sim as MMCAnimated;
-        let lastLogTime = 0;
+        console.log('initializeAnimation called, animHost:', animHost);
+        
+        let debugCount = 0;
         
         // Update server states frequently
         const updateServers = () => {
             // Get current server capacity and number in service
             const serverCount = sim.qService.capacity as number;
             
-            // Try different ways to get the number of customers in service
-            let inService = 0;
-            const grossPopObj = (sim.qService.grossPop as any);
+            // Use the 'pop' property which returns the current number of entities in the queue
+            const inService = (sim.qService as any).pop || 0;
             
-            // Try various property names
-            if (grossPopObj?.current !== undefined) {
-                inService = grossPopObj.current;
-            } else if (grossPopObj?.n !== undefined) {
-                inService = grossPopObj.n;
-            } else if (typeof grossPopObj?.current === 'function') {
-                inService = grossPopObj.current();
-            }
-            
-            // Debug logging (every 1 second)
-            const now = Date.now();
-            if (now - lastLogTime > 1000) {
-                console.log('DEBUG - Server update:', { 
-                    serverCount, 
-                    inService,
-                    'grossPopObj.current': (grossPopObj as any)?.current,
-                    'grossPopObj.n': (grossPopObj as any)?.n,
-                    'qService population': (sim.qService as any)?.population,
-                    'qService entitiesCount': (sim.qService as any)?.cnt,
+            // Debug every second
+            debugCount++;
+            if (debugCount % 20 === 0) {
+                console.log('DEBUG:', { 
+                    inService, 
+                    pop: (sim.qService as any).pop,
+                    entities: (sim.qService as any).entities?.length,
+                    items: (sim.qService as any)._items?.size
                 });
-                lastLogTime = now;
             }
             
             // Find all server circles in the SVG
             const allCircles = animHost.querySelectorAll('circle[id^="server-"]');
+            
+            // Debug: log circles found
+            if (debugCount % 20 === 0) {
+                console.log('Circles found:', allCircles.length, 'inService:', inService);
+            }
             
             // Update each server circle color
             allCircles.forEach((circle: any, index: number) => {
