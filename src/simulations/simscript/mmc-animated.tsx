@@ -1,21 +1,18 @@
 import { Simulation, Entity, Queue, Exponential, setOptions, format } from 'simscript';
-import { SimulationComponent, NumericParameter, HTMLDiv } from '../../simscript-react/components';
+import { SimulationComponent, NumericParameter } from '../../simscript-react/components';
 
 /**
- * MMC Animation Component - shows queue and servers with animated customers
+ * MMC Animation Component - Custom visualization of waiting queue and servers
  */
 export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
 
-    // render parameters section
     renderParams(): JSX.Element {
         const
             sim = this.props.sim,
             c = sim.qService.capacity as number;
 
         return <>
-            <h3>
-                Parameters
-            </h3>
+            <h3>Parameters</h3>
             <ul>
                 <li>
                     <NumericParameter label='Number of Servers:' parent={this} value={c}
@@ -39,7 +36,6 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
         </>;
     }
 
-    // render output section
     renderOutput(): JSX.Element {
         const sum = (rho1: number, c: number): number => {
             let sum = 0;
@@ -68,63 +64,56 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
             wq = lq / lambda;
         
         return <>
-            <h3>
-                Results
-            </h3>
-
+            <h3>Results</h3>
             {rho >= 1 && <p className='error'>
                 ** The server utilization exceeds 100%; the system will not reach a steady-state. **
             </p>}
-
             <ul className='multi-column'>
-                <li>
-                    Simulated time:{' '}
-                    <b>{format(sim.timeNow / 60, 0)}</b> hours</li>
-                <li>
-                    Elapsed time:{' '}
-                    <b>{format(sim.timeElapsed / 1000, 2)}</b> seconds</li>
-                <li>
-                    Number of Servers:{' '}
-                    <b>{format(c, 0)}</b></li>
-                <li>
-                    Mean Wait:{' '}
-                    <b>{format(sim.qWait.grossDwell.avg, 2)}</b>{' '}
-                    (<i>{format(wq, 2)})</i> {sim.timeUnit}</li>
-                <li>
-                    Mean Queue:{' '}
-                    <b>{format(sim.qWait.grossPop.avg, 2)}</b>{' '}
-                    (<i>{format(lq, 2)}</i>)</li>
-                <li>
-                    Server Utilization:{' '}
-                    <b>{format(sim.qService.grossPop.avg / c * 100, 0)}%</b>{' '}
-                    (<i>{format(rho * 100, 0)}%</i>)</li>
-                <li>
-                    Customers Served:{' '}
-                    <b>{format(sim.qService.grossDwell.cnt, 0)}</b></li>
+                <li>Simulated time: <b>{format(sim.timeNow / 60, 0)}</b> hours</li>
+                <li>Elapsed time: <b>{format(sim.timeElapsed / 1000, 2)}</b> seconds</li>
+                <li>Number of Servers: <b>{format(c, 0)}</b></li>
+                <li>Customers in Queue: <b>{format(sim.qWait.grossPop.avg, 2)}</b></li>
+                <li>Customers in Service: <b>{format(sim.qService.grossPop.avg, 2)}</b></li>
+                <li>Mean Wait: <b>{format(sim.qWait.grossDwell.avg, 2)}</b> ({format(wq, 2)}) {sim.timeUnit}</li>
+                <li>Server Utilization: <b>{format(sim.qService.grossPop.avg / c * 100, 0)}%</b></li>
+                <li>Customers Served: <b>{format(sim.qService.grossDwell.cnt, 0)}</b></li>
             </ul>
         </>;
     }
 
-    // render animation
     getAnimationHostHtml(): string {
-        return `<svg class='ss-anim' viewBox='0 0 1000 400'>
-            <!-- Title -->
-            <text x='5%' y='8%' font-size='18' font-weight='bold' fill='#333'>M/M/C Queue Animation</text>
+        const sim = this.props.sim as MMCAnimated;
+        const serverCount = sim.qService.capacity as number;
+        
+        // Create server circles
+        let serverCircles = '';
+        for (let i = 0; i < serverCount; i++) {
+            const x = 100 + (i % 5) * 120;
+            const y = 150 + Math.floor(i / 5) * 120;
+            serverCircles += `<circle id='server-${i}' cx='${x}' cy='${y}' r='30' fill='#2ecc71' stroke='#27ae60' stroke-width='2'/>`;
+        }
+
+        return `<svg class='ss-anim' viewBox='0 0 1000 450' style='background-color: #fafafa;'>
+            <text x='20' y='30' font-size='18' font-weight='bold' fill='#333'>M/M/C Queue Animation</text>
             
             <!-- Waiting Queue Section -->
-            <text x='5%' y='25%' font-size='14' font-weight='bold' fill='#333'>Waiting Queue</text>
-            <rect x='5%' y='30%' width='40%' height='45%' fill='#f5f5f5' stroke='#999' stroke-width='2' rx='5'/>
-            <circle class='ss-queue qwait' cx='25%' cy='60%' r='18'/>
+            <text x='20' y='70' font-size='14' font-weight='bold' fill='#333'>Waiting Queue</text>
+            <rect x='20' y='85' width='380' height='300' fill='white' stroke='#bbb' stroke-width='2' rx='5'/>
             
             <!-- Servers Section -->
-            <text x='55%' y='25%' font-size='14' font-weight='bold' fill='#333'>Servers</text>
-            <rect x='55%' y='30%' width='40%' height='45%' fill='#f5f5f5' stroke='#999' stroke-width='2' rx='5'/>
-            <circle class='ss-queue qservice' cx='75%' cy='60%' r='18'/>
+            <text x='450' y='70' font-size='14' font-weight='bold' fill='#333'>Servers</text>
+            <rect x='450' y='85' width='530' height='300' fill='white' stroke='#bbb' stroke-width='2' rx='5'/>
+            ${serverCircles}
             
             <!-- Legend -->
-            <text x='5%' y='92%' font-size='11' fill='#666'>
-                ● = Customer Waiting  |  ● = Customer Being Served
-            </text>
+            <text x='20' y='410' font-size='11' fill='#666'>● = Customer Waiting</text>
+            <circle cx='15' cy='405' r='4' fill='#3498db'/>
+            
+            <text x='250' y='410' font-size='11' fill='#666'>● = Server Available</text>
+            <circle cx='245' cy='405' r='8' fill='#2ecc71'/>
+            
+            <text x='580' y='410' font-size='11' fill='#666'>● = Server Busy</text>
+            <circle cx='575' cy='405' r='8' fill='#e74c3c'/>
         </svg>`;
     }
 
@@ -133,23 +122,51 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
         
         return {
             getEntityHtml: (e: Entity) => {
-                // Color based on which queue the entity is in
-                let color = '#e74c3c';  // default red
-                if (e instanceof Customer) {
-                    const customer = e as any;
-                    if (customer.inService) {
-                        color = '#f39c12';  // yellow for service
-                    } else {
-                        color = '#3498db';  // blue for waiting
-                    }
-                }
-                return `<circle cx='0' cy='0' r='6' fill='${color}' stroke='white' stroke-width='1'/>`;
+                return `<circle cx='0' cy='0' r='12' fill='#3498db' stroke='#2980b9' stroke-width='1.5'/>`;
             },
             queues: [
-                { queue: sim.qWait, element: 'svg .ss-queue.qwait', max: 12, angle: 45 },
-                { queue: sim.qService, element: 'svg .ss-queue.qservice', max: 8, angle: 45 },
+                { 
+                    queue: sim.qWait, 
+                    element: 'svg rect[x="20"][y="85"]',
+                    x: 390,
+                    y: 370,
+                    max: 30,
+                    angle: -45
+                }
             ]
         };
+    }
+
+    initializeAnimation(animHost: HTMLElement): void {
+        const sim = this.props.sim as MMCAnimated;
+        const serverCount = sim.qService.capacity as number;
+        
+        // Update server states on time changes
+        const updateServers = () => {
+            // Get current number of customers in service
+            const inService = sim.serversOccupied;
+            
+            // Update each server circle color
+            for (let i = 0; i < serverCount; i++) {
+                const serverCircle = animHost.querySelector(`#server-${i}`) as SVGCircleElement;
+                if (serverCircle) {
+                    // If fewer customers than this server index, the server is idle
+                    if (inService > i) {
+                        serverCircle.setAttribute('fill', '#e74c3c'); // red = busy
+                        serverCircle.setAttribute('stroke', '#c0392b');
+                    } else {
+                        serverCircle.setAttribute('fill', '#2ecc71'); // green = available
+                        serverCircle.setAttribute('stroke', '#27ae60');
+                    }
+                }
+            }
+        };
+        
+        sim.timeNowChanged.addEventListener(updateServers);
+        sim.stateChanged.addEventListener(updateServers);
+        
+        // Initial update
+        updateServers();
     }
 }
 
@@ -161,6 +178,7 @@ export class MMCAnimated extends Simulation {
     qService = new Queue('Service', 2);
     interArrival = new Exponential(80);
     service = new Exponential(100);
+    serversOccupied = 0;  // Track number of busy servers
 
     constructor(options?: any) {
         super();
@@ -171,39 +189,24 @@ export class MMCAnimated extends Simulation {
 
     onStarting() {
         super.onStarting();
-        
-        // Set histogram parameters for analysis
         this.qWait.grossPop.setHistogramParameters(1, 0, 10);
         this.qWait.grossDwell.setHistogramParameters(60, 0, 500 - 0.1);
-
-        // Start simulation - generate many customers
         this.generateEntities(Customer, this.interArrival, 1e5);
     }
 }
 
-// Customer entity
 class Customer extends Entity<MMCAnimated> {
-    inService = false;
-
     async script() {
         let sim = this.simulation;
-        
-        // Enter waiting queue immediately
         this.enterQueueImmediately(sim.qWait);
-        
-        // Wait for service to become available
         await this.enterQueue(sim.qService);
-        
-        // Leave the waiting queue
         this.leaveQueue(sim.qWait);
         
-        // Now in service
-        this.inService = true;
-        
-        // Delay for service duration
+        // Track server occupancy
+        sim.serversOccupied++;
         await this.delay(sim.service.sample());
+        sim.serversOccupied--;
         
-        // Service complete
         this.leaveQueue(sim.qService);
     }
 }
