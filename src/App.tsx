@@ -5,6 +5,7 @@ import { SimulationComponent } from './simscript-react/components';
 // SimScript samples
 import { BarberShop } from './simulations/simscript/barbershop';
 import { MMC, MMCComponent } from './simulations/simscript/mmc';
+import { MMCAnimated, MMCAnimatedComponent } from './simulations/simscript/mmc-animated';
 import { Crosswalk, CrosswalkComponent } from './simulations/simscript/crosswalk';
 import { Asteroids, AsteroidsComponent } from './simulations/simscript/asteroids';
 
@@ -47,6 +48,7 @@ export default function App() {
                             <MyLink to='/bshop'>Barbershop</MyLink>
                             <MyLink to='/mmc'>M/M/C (default)</MyLink>
                             <MyLink to='/mmc-cst'>M/M/C (custom)</MyLink>
+                            <MyLink to='/mmc-anim'>M/M/C (animated)</MyLink>
                             <MyLink to='/xwlk'>Crosswalk</MyLink>
                             <MyLink to='/xwlk-anim'>Crosswalk (animated)</MyLink>
                             <MyLink to='/asteroids'>Asteroids</MyLink>
@@ -125,6 +127,24 @@ export default function App() {
                                     next to the results calculated by <b>SimScript</b>.</li>
                             </ol>
                             <MMCComponent key='mmc-cst' sim={new MMC()} />
+                        </div>
+                    } />
+                    <Route path='/mmc-anim' element={
+                        <div>
+                            <h1>
+                                M/M/C Simulation (animated)</h1>
+                            <p>
+                                A <a href='https://en.wikipedia.org/wiki/M/M/c_queue'>
+                                    classic M/M/C queueing system</a>.
+                                Entities (calls) arrive, are served by one of C servers, and leave.</p>
+                            <p>
+                                This version shows an animated visualization of:</p>
+                            <ol>
+                                <li>Customer arrivals (blue dots)</li>
+                                <li>Customers waiting in queue (green dots)</li>
+                                <li>Customers being served by available servers (yellow dots)</li>
+                            </ol>
+                            <MMCAnimatedComponent key='mmc-anim' sim={new MMCAnimated()} animated={true} />
                         </div>
                     } />
                     <Route path='/xwlk' element={
