@@ -1,19 +1,37 @@
+import React from 'react';
 import { Simulation, Entity, Queue, Exponential, setOptions, format, Animation } from 'simscript';
-import { SimulationComponent, NumericParameter, BooleanParameter } from '../../simscript-react/components';
+import { SimulationComponent, NumericParameter, BooleanParameter, HTMLDiv } from '../../simscript-react/components';
 
 /**
  * MMC Animation Component - Custom visualization of waiting queue and servers
  */
 export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
     _animation: Animation | null = null;
+    _animVersion: number = 0;
+    _animRef = React.createRef<HTMLDivElement>();
 
-    // Reinitialize animation after DOM is replaced
-    reinitializeAnimation() {
-        const animRef = (this as any)._animRef;
-        if (animRef && animRef.current) {
-            const animHost = animRef.current.querySelector('.ss-anim') as HTMLElement;
+    // Initialize animation when the animation div is ready
+    initAnimationFromRef() {
+        if (this._animRef.current) {
+            const animHost = this._animRef.current.querySelector('.ss-anim') as HTMLElement;
             if (animHost) {
-                // Create new Animation instance
+                this._animation = new Animation(this.props.sim, animHost, this.getAnimationOptions());
+                this.initializeAnimation(animHost);
+            }
+        }
+    }
+
+    componentDidMount() {
+        (this as any)._mounted = true;
+        this.initAnimationFromRef();
+    }
+
+    componentDidUpdate(prevProps: any, prevState: any) {
+        // If animation version changed, reinitialize the animation
+        if (this._animRef.current) {
+            const animHost = this._animRef.current.querySelector('.ss-anim') as HTMLElement;
+            if (animHost && !animHost.hasAttribute('data-initialized')) {
+                animHost.setAttribute('data-initialized', 'true');
                 this._animation = new Animation(this.props.sim, animHost, this.getAnimationOptions());
                 this.initializeAnimation(animHost);
             }
@@ -29,13 +47,12 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
         const restartSim = () => {
             const wasRunning = sim.state === 1; // SimulationState.Running = 1
             sim.stop(true);
+            // Increment version to force new animation DOM
+            this._animVersion++;
             if (wasRunning) {
-                // Wait for React to re-render, then reinitialize animation and start
-                setTimeout(() => {
-                    this.reinitializeAnimation();
-                    sim.start();
-                }, 100);
+                setTimeout(() => sim.start(), 150);
             }
+            this.forceUpdate();
         };
 
         return <>
@@ -167,6 +184,39 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
                 }
             ]
         };
+    }
+
+    // Override render to use a key that forces recreation of animation DOM
+    render() {
+        const sim = this.props.sim;
+        const runText = String.fromCharCode(9654) + ' Run';
+        const stopText = String.fromCharCode(9632) + ' Stop';
+        const animHtml = this.getAnimationHostHtml();
+        
+        return <div className='sim-cmp'>
+            <div className='sim-params'>
+                {this.renderParams()}
+            </div>
+            <div className='sim-animation' ref={this._animRef} key={`anim-${this._animVersion}`}>
+                {animHtml != null && <HTMLDiv html={animHtml} />}
+            </div>
+            <button className='btn-run' onClick={e => this.clickRun(e)}>
+                {sim.state !== 1 ? runText : stopText}
+            </button>
+            <div className='sim-output'>
+                {sim.timeNow > 0 && this.renderOutput()}
+            </div>
+        </div>;
+    }
+
+    clickRun(e?: any) {
+        const sim = this.props.sim;
+        if (sim.state === 1) { // Running
+            sim.stop();
+        } else {
+            sim.start(e.ctrlKey);
+        }
+        this.forceUpdate();
     }
 
     initializeAnimation(animHost: HTMLElement): void {
