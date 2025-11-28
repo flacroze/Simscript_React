@@ -11,25 +11,34 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
             sim = this.props.sim,
             c = sim.qService.capacity as number;
 
+        // Helper to restart simulation after parameter change
+        const restartSim = () => {
+            const wasRunning = sim.state === 1; // SimulationState.Running = 1
+            sim.stop(true);
+            if (wasRunning) {
+                setTimeout(() => sim.start(), 50);
+            }
+        };
+
         return <>
             <h3>Parameters</h3>
             <ul>
                 <li>
                     <NumericParameter label='Number of Servers:' parent={this} value={c}
                         min={1} max={10}
-                        change={v => sim.qService.capacity = v}
+                        change={v => { sim.qService.capacity = v; restartSim(); }}
                         suffix={` ${format(c, 0)} servers`} />
                 </li>
                 <li>
                     <NumericParameter label='Mean inter-arrival time:' parent={this} value={sim.interArrival.mean}
                         min={10} max={200}
-                        change={v => sim.interArrival = new Exponential(v)}
+                        change={v => { sim.interArrival = new Exponential(v); restartSim(); }}
                         suffix={` ${format(sim.interArrival.mean, 0)} ${sim.timeUnit}`} />
                 </li>
                 <li>
                     <NumericParameter label='Mean service time:' parent={this} value={sim.service.mean}
                         min={10} max={200}
-                        change={v => sim.service = new Exponential(v)}
+                        change={v => { sim.service = new Exponential(v); restartSim(); }}
                         suffix={` ${format(sim.service.mean, 0)} ${sim.timeUnit}`} />
                 </li>
                 <li>
