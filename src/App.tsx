@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Switch, Route, NavLink } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import { SimulationComponent } from './simscript-react/components';
 
 // SimScript samples
@@ -26,7 +26,7 @@ import './App.css';
 
 // link with active class name
 function MyLink(props: any) {
-    return <NavLink exact activeClassName='active' to={props.to}>
+    return <NavLink className={({ isActive }) => isActive ? 'active' : ''} to={props.to}>
         {props.children}
     </NavLink>;
 }
@@ -76,13 +76,13 @@ export default function App() {
                 </div>
 
                 {/* 
-                A <Switch> looks through its children <Route>s and
+                A <Routes> looks through its children <Route>s and
                 renders the first one that matches the current URL. 
                 */}
-                <Switch>
+                <Routes>
 
                     {/* SimScript samples */}
-                    <Route path='/bshop'>
+                    <Route path='/bshop' element={
                         <div>
                             <h1>
                                 BarberShop Simulation</h1>
@@ -93,8 +93,8 @@ export default function App() {
                                 get serviced, and leave.</p>
                             <SimulationComponent key='bshop' sim={new BarberShop()} />
                         </div>
-                    </Route>
-                    <Route path='/mmc'>
+                    } />
+                    <Route path='/mmc' element={
                         <div>
                             <h1>
                                 M/M/C Simulation (default)</h1>
@@ -106,8 +106,8 @@ export default function App() {
                                 This version shows the standard <b>SimScript</b> output table.</p>
                             <SimulationComponent key='mmc' sim={new MMC()} />
                         </div>
-                    </Route>
-                    <Route path='/mmc-cst'>
+                    } />
+                    <Route path='/mmc-cst' element={
                         <div>
                             <h1>
                                 M/M/C Simulation (custom)</h1>
@@ -126,8 +126,8 @@ export default function App() {
                             </ol>
                             <MMCComponent key='mmc-cst' sim={new MMC()} />
                         </div>
-                    </Route>
-                    <Route path='/xwlk'>
+                    } />
+                    <Route path='/xwlk' element={
                         <div>
                             <h1>
                                 Crosswalk Simulation</h1>
@@ -140,8 +140,8 @@ export default function App() {
                                 sim={new Crosswalk()}
                                 animated={false} />
                         </div>
-                    </Route>
-                    <Route path='/xwlk-anim'>
+                    } />
+                    <Route path='/xwlk-anim' element={
                         <div>
                             <h1>
                                 Crosswalk Simulation (animated)</h1>
@@ -154,8 +154,8 @@ export default function App() {
                                 sim={new Crosswalk({ slowMode: true })}
                                 animated='svg' />
                         </div>
-                    </Route>
-                    <Route path='/asteroids'>
+                    } />
+                    <Route path='/asteroids' element={
                         <div>
                             <h1>
                                 Asteroids</h1>
@@ -184,10 +184,10 @@ export default function App() {
                                 key='asteroids'
                                 sim={new Asteroids()} />
                         </div>
-                    </Route>
+                    } />
 
                     {/* GPSS samples */}
-                    <Route path='/phone'>
+                    <Route path='/phone' element={
                         <div>
                             <h1>
                                 Telephone System Simulation</h1>
@@ -203,8 +203,8 @@ export default function App() {
                                 How long will it take for 200 calls to be completed?</p>
                             <TelephoneComponent key='phone' sim={new Telephone()} />
                         </div>
-                    </Route>
-                    <Route path='/tv'>
+                    } />
+                    <Route path='/tv' element={
                         <div>
                             <h1>
                                 TV Repair Shop Simulation</h1>
@@ -233,8 +233,8 @@ export default function App() {
                                 (2)&nbsp;The delays in the service to customers.</p>
                             <TVRepairShopComponent key='tv' sim={new TVRepairShop()} />
                         </div>
-                    </Route>
-                    <Route path='/order'>
+                    } />
+                    <Route path='/order' element={
                         <div>
                             <h1>
                                 Order Point Simulation</h1>
@@ -252,8 +252,8 @@ export default function App() {
                                 (2)&nbsp;The actual daily sales.</p>
                             <OrderPointComponent key='order' sim={new OrderPoint()} />
                         </div>
-                    </Route>
-                    <Route path='/textile'>
+                    } />
+                    <Route path='/textile' element={
                         <div>
                             <h1>
                                 Textile Factory Simulation</h1>
@@ -283,10 +283,10 @@ export default function App() {
                                 (2)&nbsp;The utilization of each of the three types of machines.</p>
                             <TextileComponent key='textile' sim={new Textile()} />
                         </div>
-                    </Route>
+                    } />
 
                     {/* Steering samples (SVG) */}
-                    <Route path='/seek'>
+                    <Route path='/seek' element={
                         <div>
                             <h1>Seek Simulation</h1>
                             <p>
@@ -297,8 +297,8 @@ export default function App() {
                                 reach the target.</p>
                             <SteeringComponent key='seek' sim={new SteeringSeek()} />
                         </div>
-                    </Route>
-                    <Route path='/avoid'>
+                    } />
+                    <Route path='/avoid' element={
                         <div>
                             <h1>Avoid Simulation</h1>
                             <p>
@@ -309,8 +309,8 @@ export default function App() {
                                 circles, other entities are also treated as obstacles.</p>
                             <SteeringComponent key='avoid' sim={new SteeringAvoid({ avoidEntities: true })} />
                         </div>
-                    </Route>
-                    <Route path='/seek-avoid'>
+                    } />
+                    <Route path='/seek-avoid' element={
                         <div>
                             <h1>Seek and Avoid Simulation</h1>
                             <p>
@@ -318,8 +318,8 @@ export default function App() {
                                 <b>AvoidBehavior</b> to avoid walls and other entities.</p>
                             <SteeringComponent key='seek-avoid' sim={new SteeringLinearObstaclesSeek()} />
                         </div>
-                    </Route>
-                    <Route path='/network'>
+                    } />
+                    <Route path='/network' element={
                         <div>
                             <h1>Network Steering Simulation</h1>
                             <p>
@@ -336,10 +336,10 @@ export default function App() {
                                 animated='svg'
                                 viewBox='-100 -50 1000 500' />
                         </div>
-                    </Route>
+                    } />
 
                     {/* Steering samples (X3DOM) */}
-                    <Route path='/seek-x3d'>
+                    <Route path='/seek-x3d' element={
                         <div>
                             <h1>Seek Simulation</h1>
                             <p>
@@ -353,8 +353,8 @@ export default function App() {
                                 sim={new SteeringSeek()}
                                 animated='x3d' />
                         </div>
-                    </Route>
-                    <Route path='/avoid-x3d'>
+                    } />
+                    <Route path='/avoid-x3d' element={
                         <div>
                             <h1>Avoid Simulation</h1>
                             <p>
@@ -368,8 +368,8 @@ export default function App() {
                                 sim={new SteeringAvoid({ avoidEntities: true })}
                                 animated='x3d' />
                         </div>
-                    </Route>
-                    <Route path='/seek-avoid-x3d'>
+                    } />
+                    <Route path='/seek-avoid-x3d' element={
                         <div>
                             <h1>Seek and Avoid Simulation</h1>
                             <p>
@@ -380,8 +380,8 @@ export default function App() {
                                 sim={new SteeringLinearObstaclesSeek()}
                                 animated='x3d' />
                         </div>
-                    </Route>
-                    <Route path='/network-x3d'>
+                    } />
+                    <Route path='/network-x3d' element={
                         <div>
                             <h1>Network Steering Simulation</h1>
                             <p>
@@ -404,13 +404,11 @@ export default function App() {
                                     </viewpoint>`}
                             />
                         </div>
-                    </Route>
+                    } />
 
                     {/* home */}
-                    <Route path='/'>
-                        <Home />
-                    </Route>
-                </Switch>
+                    <Route path='/' element={<Home />} />
+                </Routes>
             </div>
         </BrowserRouter>
     );
