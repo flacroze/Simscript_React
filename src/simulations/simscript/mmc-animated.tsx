@@ -144,27 +144,56 @@ export class MMCAnimatedComponent extends SimulationComponent<MMCAnimated> {
 
     initializeAnimation(animHost: HTMLElement): void {
         const sim = this.props.sim as MMCAnimated;
+        let lastLogTime = 0;
         
         // Update server states frequently
         const updateServers = () => {
             // Get current server capacity and number in service
             const serverCount = sim.qService.capacity as number;
-            const inService = (sim.qService.grossPop as any).current || 0;
+            
+            // Try different ways to get the number of customers in service
+            let inService = 0;
+            const grossPopObj = (sim.qService.grossPop as any);
+            
+            // Try various property names
+            if (grossPopObj?.current !== undefined) {
+                inService = grossPopObj.current;
+            } else if (grossPopObj?.n !== undefined) {
+                inService = grossPopObj.n;
+            } else if (typeof grossPopObj?.current === 'function') {
+                inService = grossPopObj.current();
+            }
+            
+            // Debug logging (every 1 second)
+            const now = Date.now();
+            if (now - lastLogTime > 1000) {
+                console.log('DEBUG - Server update:', { 
+                    serverCount, 
+                    inService,
+                    'grossPopObj.current': (grossPopObj as any)?.current,
+                    'grossPopObj.n': (grossPopObj as any)?.n,
+                    'qService population': (sim.qService as any)?.population,
+                    'qService entitiesCount': (sim.qService as any)?.cnt,
+                });
+                lastLogTime = now;
+            }
+            
+            // Find all server circles in the SVG
+            const allCircles = animHost.querySelectorAll('circle[id^="server-"]');
             
             // Update each server circle color
-            for (let i = 0; i < serverCount; i++) {
-                const serverCircle = animHost.querySelector(`#server-${i}`) as SVGCircleElement;
-                if (serverCircle) {
-                    // Server is busy if it's handling a customer
-                    if (i < inService) {
-                        serverCircle.setAttribute('fill', '#e74c3c'); // red = busy
-                        serverCircle.setAttribute('stroke', '#c0392b');
+            allCircles.forEach((circle: any, index: number) => {
+                if (index < serverCount) {
+                    // Server is busy if its index is less than number in service
+                    if (index < inService) {
+                        circle.setAttribute('fill', '#e74c3c'); // red = busy
+                        circle.setAttribute('stroke', '#c0392b');
                     } else {
-                        serverCircle.setAttribute('fill', '#2ecc71'); // green = available
-                        serverCircle.setAttribute('stroke', '#27ae60');
+                        circle.setAttribute('fill', '#2ecc71'); // green = available
+                        circle.setAttribute('stroke', '#27ae60');
                     }
                 }
-            }
+            });
         };
         
         // Update on time changes
