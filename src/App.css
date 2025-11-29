@@ -124,7 +124,8 @@ svg.ss-chart {
 }
 
 .ss-histogram {
-    max-width: 30em;
+    width: 100%;
+    max-width: 100%;
 }
 
 .sim-output .error {

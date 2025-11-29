@@ -11,7 +11,8 @@ export class MMCComponent extends SimulationComponent<MMC> {
     renderParams(): JSX.Element {
         const
             sim = this.props.sim,
-            c = sim.qService.capacity as number;
+            c = sim.qService.capacity as number,
+            callsPerHour = Math.round(3600 / sim.interArrival.mean);
 
         return <>
             <h3>
@@ -19,20 +20,20 @@ export class MMCComponent extends SimulationComponent<MMC> {
             </h3>
             <ul>
                 <li>
-                    <NumericParameter label='Number of Servers:' parent={this} value={c}
-                        min={1} max={10}
+                    <NumericParameter label="Nombre d'agents :" parent={this} value={c}
+                        min={1} max={100}
                         change={v => sim.qService.capacity = v}
                         suffix={` ${format(c, 0)} servers`} />
                 </li>
                 <li>
-                    <NumericParameter label='Mean inter-arrival time:' parent={this} value={sim.interArrival.mean}
-                        min={10} max={200}
-                        change={v => sim.interArrival = new Exponential(v)}
-                        suffix={` ${format(sim.interArrival.mean, 0)} ${sim.timeUnit}`} />
+                    <NumericParameter label="Nombre d'appels dans l'heure :" parent={this} value={callsPerHour}
+                        min={1} max={1000}
+                        change={v => sim.interArrival = new Exponential(3600 / v)}
+                        suffix={` ${format(callsPerHour, 0)} appels/heure`} />
                 </li>
                 <li>
-                    <NumericParameter label='Mean service time:' parent={this} value={sim.service.mean}
-                        min={10} max={200}
+                    <NumericParameter label='Durée de traitement:' parent={this} value={sim.service.mean}
+                        min={10} max={900}
                         change={v => sim.service = new Exponential(v)}
                         suffix={` ${format(sim.service.mean, 0)} ${sim.timeUnit}`} />
                 </li>
@@ -81,7 +82,7 @@ export class MMCComponent extends SimulationComponent<MMC> {
             <ul className='multi-column'>
                 <li>
                     Simulated time:{' '}
-                    <b>{format(sim.timeNow / 60, 0)}</b> hours</li>
+                    <b>{format(sim.timeNow / 3600, 0)}</b> hours</li>
                 <li>
                     Elapsed time:{' '}
                     <b>{format(sim.timeElapsed / 1000, 2)}</b> seconds</li>
@@ -117,10 +118,8 @@ export class MMCComponent extends SimulationComponent<MMC> {
                     <b>{format(sim.qService.grossDwell.cnt, 0)}</b></li>
             </ul>
 
-            <div className='histograms'>
-                <HTMLDiv html={sim.qWait.grossPop.getHistogramChart('Queue lengths') }/>
-                <HTMLDiv html={sim.qWait.grossDwell.getHistogramChart('Wait times (hours)', 1/60)} />
-            </div>
+            <HTMLDiv html={sim.qWait.grossPop.getHistogramChart('Taille de la file d\'attente') }/>
+            <HTMLDiv html={sim.qWait.grossDwell.getHistogramChart("Durée d'attente (secondes)", 1)} />
 
         </>;
     }
@@ -131,14 +130,14 @@ export class MMCComponent extends SimulationComponent<MMC> {
  */
 export class MMC extends Simulation {
     qWait = new Queue('Wait');
-    qService = new Queue('Service', 2);
-    interArrival = new Exponential(80);
-    service = new Exponential(100);
+    qService = new Queue('Service', 34);
+    interArrival = new Exponential(10);
+    service = new Exponential(300);
 
     constructor(options?: any) {
         super();
         this.name = 'MMC';
-        this.timeUnit = 'min';
+        this.timeUnit = 'secondes';
         setOptions(this, options);
     }
 
